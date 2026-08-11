@@ -1,0 +1,52 @@
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lấy code
+        uses: actions/checkout@v4
+
+      - name: Cài Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Cài Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Cài thư viện npm
+        run: npm install
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Khởi tạo Capacitor
+        run: npx cap init "So Tay" "com.sotay.app" --web-dir=dist
+
+      - name: Thêm nền tảng Android
+        run: npx cap add android
+
+      - name: Đồng bộ Capacitor
+        run: npx cap sync
+
+      - name: Build APK
+        working-directory: ./android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Tải APK lên (artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: so-tay-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          
